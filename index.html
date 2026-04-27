@@ -207,7 +207,7 @@
                 "管理员备注": document.getElementById('iptRemark').value
             };
 
-            btn.innerText = "同步中...";
+            btn.innerText = "同步中稍等片刻...";
             const payload = id ? { records: [{ recordId: id, fields }], fieldKey: 'name' } : { records: [{ fields }], fieldKey: 'name' };
             const res = await vikaRequest('records', id ? 'PATCH' : 'POST', payload);
             btn.innerText = "保存";
