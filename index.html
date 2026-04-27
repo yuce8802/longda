@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>龙达 & VortinT 稳定管理系统</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/2.2.19/tailwind.min.js"></script>
+    
     <style>
-        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* 【关键修改】使用国内系统默认字体序列，防止因加载 Google Fonts 导致的页面卡顿 */
+        body { 
+            background-color: #f8fafc; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent; 
+        }
         
         /* 状态颜色 */
         .status-待加工 { background: #f3e8ff; color: #9333ea; }
@@ -23,8 +30,13 @@
         
         @media (max-width: 768px) {
             .desktop-only { display: none; }
-            #listBody tr { display: flex; flex-direction: column; padding: 1rem; margin-bottom: 1rem; background: white; border-radius: 1rem; border: 1px solid #e2e8f0; }
+            /* 移动端卡片式布局优化 */
+            .mobile-card { display: flex; flex-direction: column; padding: 1.25rem; margin-bottom: 0.75rem; background: white; border-radius: 1.25rem; border: 1px solid #e2e8f0; }
         }
+
+        /* 简单的加载动画提示 */
+        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden">
@@ -42,7 +54,6 @@
     </div>
 
     <div id="appBody" class="hidden flex flex-col md:flex-row w-full h-full">
-        
         <aside class="sidebar w-full md:w-20 h-16 md:h-full bg-slate-900 flex md:flex-col items-center justify-between md:justify-start py-0 md:py-8 px-6 md:px-0 fixed md:relative bottom-0 z-50">
             <div class="text-indigo-500 font-black text-xl md:text-2xl italic md:mb-10">LD</div>
             <div class="flex md:flex-col gap-6 md:gap-8">
@@ -60,7 +71,7 @@
                 <div>
                     <h1 class="text-lg md:text-xl font-bold text-slate-800">流水线监控</h1>
                     <div class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span id="connDot" class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                         <span class="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">Cloud Connected</span>
                     </div>
                 </div>
@@ -81,7 +92,8 @@
 
                     <div id="listContainer" class="space-y-3 md:space-y-0 md:bg-white md:rounded-[2rem] md:shadow-sm md:border md:border-slate-100 md:overflow-hidden">
                         <div id="listBody" class="md:divide-y md:divide-slate-50">
-                            </div>
+                            <div class="p-10 text-center text-slate-400">正在同步云端数据...</div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -96,11 +108,11 @@
                 <input type="hidden" id="recId">
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">产品名称</label>
-                    <input type="text" id="iptName" required class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none text-slate-700 font-medium">
+                    <input type="text" id="iptName" required class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-slate-700 font-medium">
                 </div>
                 <div>
                     <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">当前状态</label>
-                    <select id="iptStatus" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none cursor-pointer text-slate-700 font-medium appearance-none">
+                    <select id="iptStatus" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none cursor-pointer text-slate-700 font-medium">
                         <option value="待处理">待处理</option>
                         <option value="待加工">待加工</option>
                         <option value="组装中">组装中</option>
@@ -121,7 +133,6 @@
     </div>
 
     <script>
-        // 配置保持不变
         const CONFIG = {
             TOKEN: "uskSHurHAYSbDQBvTya8V2X",
             SHEET_ID: "dst5PM6JE2lFUV2AWB",
@@ -131,6 +142,9 @@
         let dataCache = [];
 
         async function vikaRequest(path, method = 'GET', body = null) {
+            const dot = document.getElementById('connDot');
+            dot.classList.replace('bg-green-500', 'bg-yellow-500'); // 请求中变黄
+
             const url = `https://api.vika.cn/fusion/v1/datasheets/${CONFIG.SHEET_ID}/${path}`;
             const headers = { 'Authorization': `Bearer ${CONFIG.TOKEN}` };
             if (method !== 'GET' && method !== 'DELETE' && body) headers['Content-Type'] = 'application/json';
@@ -138,8 +152,12 @@
             try {
                 const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
                 const json = await res.json();
+                dot.classList.replace('bg-yellow-500', 'bg-green-500');
                 return json.success ? json.data : (alert(json.message), null);
-            } catch (e) { return alert("网络错误"), null; }
+            } catch (e) { 
+                dot.classList.replace('bg-yellow-500', 'bg-red-500'); // 出错变红
+                return alert("网络错误，请检查连接"), null; 
+            }
         }
 
         async function reload() {
@@ -148,7 +166,7 @@
             dataCache = data.records;
             
             document.getElementById('listBody').innerHTML = dataCache.map(r => `
-                <div class="md:grid md:grid-cols-4 items-center bg-white md:bg-transparent p-5 md:px-8 md:py-6 rounded-2xl md:rounded-none border border-slate-100 md:border-none shadow-sm md:shadow-none mb-3 md:mb-0">
+                <div class="mobile-card md:grid md:grid-cols-4 items-center bg-white md:bg-transparent p-5 md:px-8 md:py-6 rounded-2xl md:rounded-none shadow-sm md:shadow-none mb-3 md:mb-0">
                     <div class="flex items-center justify-between md:block mb-3 md:mb-0">
                         <span class="md:hidden text-[10px] font-black text-slate-300 uppercase tracking-widest">产品</span>
                         <div class="font-bold text-slate-700 text-base md:text-sm">${r.fields['产品名称'] || '-'}</div>
@@ -208,9 +226,11 @@
             };
 
             btn.innerText = "同步中...";
+            btn.disabled = true;
             const payload = id ? { records: [{ recordId: id, fields }], fieldKey: 'name' } : { records: [{ fields }], fieldKey: 'name' };
             const res = await vikaRequest('records', id ? 'PATCH' : 'POST', payload);
             btn.innerText = "保存";
+            btn.disabled = false;
             if (res) { closeForm(); reload(); }
         };
 
