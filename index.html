@@ -2,80 +2,105 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>龙达 & VortinT 稳定管理系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; }
-        .sidebar { background: #0f172a; }
-        /* 状态颜色 1:1 还原维格表 */
-        .status-待加工 { background: #f3e8ff; color: #9333ea; border: 1px solid #e9d5ff; }
-        .status-组装中 { background: #dbeafe; color: #2563eb; border: 1px solid #bfdbfe; }
-        .status-质检中 { background: #cffafe; color: #0891b2; border: 1px solid #a5f3fc; }
-        .status-已完成 { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
-        .status-待处理 { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
-        .loading { cursor: not-allowed; opacity: 0.6; }
+        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* 状态颜色 */
+        .status-待加工 { background: #f3e8ff; color: #9333ea; }
+        .status-组装中 { background: #dbeafe; color: #2563eb; }
+        .status-质检中 { background: #cffafe; color: #0891b2; }
+        .status-已完成 { background: #dcfce7; color: #16a34a; }
+        .status-待处理 { background: #f1f5f9; color: #64748b; }
+
+        /* 移动端滚动优化 */
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* 隐藏滚动条 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @media (max-width: 768px) {
+            .desktop-only { display: none; }
+            #listBody tr { display: flex; flex-direction: column; padding: 1rem; margin-bottom: 1rem; background: white; border-radius: 1rem; border: 1px solid #e2e8f0; }
+        }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex flex-col md:flex-row h-screen overflow-hidden">
 
-    <div id="loginScreen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900">
-        <div class="bg-white p-10 rounded-[2rem] shadow-2xl w-full max-w-sm mx-4">
-            <h2 class="text-2xl font-black text-slate-800 text-center mb-8">龙达系统管理</h2>
-            <input type="password" id="loginPass" placeholder="请输入管理密码" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none text-center mb-4">
-            <button onclick="handleLogin()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all">进入控制台</button>
+    <div id="loginScreen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900 p-6">
+        <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-sm">
+            <div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <div class="text-indigo-600 font-black text-2xl italic">LD</div>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 text-center mb-2">系统管理</h2>
+            <p class="text-slate-400 text-center mb-8 text-sm">请输入管理员身份密码</p>
+            <input type="password" id="loginPass" placeholder="管理密码" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none text-center mb-4 text-lg">
+            <button onclick="handleLogin()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg active:scale-95 transition-all shadow-lg shadow-indigo-200">进入控制台</button>
         </div>
     </div>
 
-    <div id="appBody" class="hidden flex w-full">
-        <aside class="sidebar w-20 flex flex-col items-center py-8 space-y-10">
-            <div class="text-indigo-500 font-black text-2xl italic">LD</div>
-            <div class="flex-1">
-                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></div>
+    <div id="appBody" class="hidden flex flex-col md:flex-row w-full h-full">
+        
+        <aside class="sidebar w-full md:w-20 h-16 md:h-full bg-slate-900 flex md:flex-col items-center justify-between md:justify-start py-0 md:py-8 px-6 md:px-0 fixed md:relative bottom-0 z-50">
+            <div class="text-indigo-500 font-black text-xl md:text-2xl italic md:mb-10">LD</div>
+            <div class="flex md:flex-col gap-6 md:gap-8">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </div>
             </div>
-            <button onclick="doLogout()" class="text-slate-500 hover:text-white transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg></button>
+            <button onclick="doLogout()" class="md:mt-auto text-slate-500 hover:text-white p-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
+            </button>
         </aside>
 
-        <div class="flex-1 flex flex-col min-w-0">
-            <header class="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between">
+        <div class="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
+            <header class="h-20 bg-white border-b border-slate-200 px-5 md:px-8 flex items-center justify-between sticky top-0 z-40">
                 <div>
-                    <h1 class="text-xl font-bold text-slate-800">流水线实时监控</h1>
-                    <p class="text-xs text-green-500 font-bold">● 已连接至维格表数据库</p>
+                    <h1 class="text-lg md:text-xl font-bold text-slate-800">流水线监控</h1>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-[10px] md:text-xs text-slate-400 font-bold uppercase tracking-wider">Cloud Connected</span>
+                    </div>
                 </div>
-                <button onclick="openForm()" class="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-black transition-all">+ 新增产品</button>
+                <button onclick="openForm()" class="bg-indigo-600 text-white w-10 h-10 md:w-auto md:px-6 md:py-2.5 rounded-xl font-bold flex items-center justify-center active:scale-95 transition-all shadow-md shadow-indigo-100">
+                    <span class="hidden md:inline">+ 新增产品</span>
+                    <span class="md:hidden text-2xl">+</span>
+                </button>
             </header>
 
-            <main class="flex-1 overflow-auto p-8">
-                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b">
-                            <tr>
-                                <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase">产品名称</th>
-                                <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase">状态</th>
-                                <th class="px-8 py-4 text-xs font-bold text-slate-400 uppercase">备注</th>
-                                <th class="px-8 py-4 text-xs font-bold text-slate-400 text-right uppercase">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listBody" class="divide-y divide-slate-50">
-                            </tbody>
-                    </table>
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
+                <div class="max-w-5xl mx-auto">
+                    <div class="hidden md:grid grid-cols-4 px-8 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
+                        <div>产品名称</div>
+                        <div>当前状态</div>
+                        <div>备注信息</div>
+                        <div class="text-right">操作</div>
+                    </div>
+
+                    <div id="listContainer" class="space-y-3 md:space-y-0 md:bg-white md:rounded-[2rem] md:shadow-sm md:border md:border-slate-100 md:overflow-hidden">
+                        <div id="listBody" class="md:divide-y md:divide-slate-50">
+                            </div>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl p-8">
-            <h3 id="modalTitle" class="text-xl font-bold mb-6">入库登记</h3>
+    <div id="modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-end md:items-center justify-center">
+        <div class="bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] w-full max-w-md shadow-2xl p-8 md:p-10 animate-in slide-in-from-bottom duration-300">
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 md:hidden"></div>
+            <h3 id="modalTitle" class="text-xl font-black mb-6 text-slate-800 text-center md:text-left">入库登记</h3>
             <form id="recordForm" class="space-y-5">
                 <input type="hidden" id="recId">
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2">产品名称</label>
-                    <input type="text" id="iptName" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">产品名称</label>
+                    <input type="text" id="iptName" required class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none text-slate-700 font-medium">
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2">当前状态</label>
-                    <select id="iptStatus" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none cursor-pointer">
+                    <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">当前状态</label>
+                    <select id="iptStatus" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none cursor-pointer text-slate-700 font-medium appearance-none">
                         <option value="待处理">待处理</option>
                         <option value="待加工">待加工</option>
                         <option value="组装中">组装中</option>
@@ -84,88 +109,79 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-black text-slate-400 mb-2">备注</label>
-                    <textarea id="iptRemark" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"></textarea>
+                    <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">管理员备注</label>
+                    <textarea id="iptRemark" rows="3" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none text-slate-700 font-medium"></textarea>
                 </div>
-                <div class="flex gap-4 pt-2">
-                    <button type="button" onclick="closeForm()" class="flex-1 py-3 font-bold text-slate-400">取消</button>
-                    <button type="submit" id="subBtn" class="flex-[2] py-3 bg-indigo-600 text-white rounded-xl font-bold">确认保存</button>
+                <div class="flex gap-4 pt-4 pb-4 md:pb-0">
+                    <button type="button" onclick="closeForm()" class="flex-1 py-4 font-bold text-slate-400 active:bg-slate-50 rounded-2xl transition-colors">取消</button>
+                    <button type="submit" id="subBtn" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 active:scale-95 transition-all">保存</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // 【已填入你最新的凭证】
+        // 配置保持不变
         const CONFIG = {
             TOKEN: "uskSHurHAYSbDQBvTya8V2X",
             SHEET_ID: "dst5PM6JE2lFUV2AWB",
-            ADMIN_PWD: "longda" // 修改这里的密码为你想要的
+            ADMIN_PWD: "longda2024"
         };
 
         let dataCache = [];
 
-        // 【终极 API 函数】
-        // 解决了 DELETE 报错、PATCH 404 等所有维格表 API 特有的坑
         async function vikaRequest(path, method = 'GET', body = null) {
             const url = `https://api.vika.cn/fusion/v1/datasheets/${CONFIG.SHEET_ID}/${path}`;
             const headers = { 'Authorization': `Bearer ${CONFIG.TOKEN}` };
+            if (method !== 'GET' && method !== 'DELETE' && body) headers['Content-Type'] = 'application/json';
             
-            // 只有非 GET/DELETE 且有数据时才加 JSON 头
-            if (method !== 'GET' && method !== 'DELETE' && body) {
-                headers['Content-Type'] = 'application/json';
-            }
-
-            const options = { method, headers };
-            if (body) options.body = JSON.stringify(body);
-
             try {
-                const res = await fetch(url, options);
+                const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
                 const json = await res.json();
-                if (!json.success) {
-                    alert("API 错误: " + json.message);
-                    return null;
-                }
-                return json.data;
-            } catch (e) {
-                alert("网络连接失败，请检查网络或配置。");
-                return null;
-            }
+                return json.success ? json.data : (alert(json.message), null);
+            } catch (e) { return alert("网络错误"), null; }
         }
 
         async function reload() {
             const data = await vikaRequest('records?fieldKey=name');
-            if (data) {
-                dataCache = data.records;
-                document.getElementById('listBody').innerHTML = dataCache.map(r => `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-8 py-5 font-bold text-slate-700">${r.fields['产品名称'] || '-'}</td>
-                        <td class="px-8 py-5">
-                            <span class="px-3 py-1 rounded-lg text-xs font-black status-${r.fields['当前状态'] || '待处理'}">
-                                ${r.fields['当前状态'] || '待处理'}
-                            </span>
-                        </td>
-                        <td class="px-8 py-5 text-slate-400 italic">${r.fields['管理员备注'] || '-'}</td>
-                        <td class="px-8 py-5 text-right space-x-4">
-                            <button onclick="openForm('${r.recordId}')" class="text-indigo-600 font-bold hover:underline">编辑</button>
-                            <button onclick="doDelete('${r.recordId}')" class="text-red-400 hover:text-red-600 font-bold">删除</button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+            if (!data) return;
+            dataCache = data.records;
+            
+            document.getElementById('listBody').innerHTML = dataCache.map(r => `
+                <div class="md:grid md:grid-cols-4 items-center bg-white md:bg-transparent p-5 md:px-8 md:py-6 rounded-2xl md:rounded-none border border-slate-100 md:border-none shadow-sm md:shadow-none mb-3 md:mb-0">
+                    <div class="flex items-center justify-between md:block mb-3 md:mb-0">
+                        <span class="md:hidden text-[10px] font-black text-slate-300 uppercase tracking-widest">产品</span>
+                        <div class="font-bold text-slate-700 text-base md:text-sm">${r.fields['产品名称'] || '-'}</div>
+                    </div>
+                    <div class="flex items-center justify-between md:block mb-4 md:mb-0">
+                        <span class="md:hidden text-[10px] font-black text-slate-300 uppercase tracking-widest">状态</span>
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black status-${r.fields['当前状态'] || '待处理'}">
+                            ${r.fields['当前状态'] || '待处理'}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between md:block mb-5 md:mb-0">
+                        <span class="md:hidden text-[10px] font-black text-slate-300 uppercase tracking-widest">备注</span>
+                        <div class="text-slate-400 text-sm italic md:truncate max-w-[150px]">${r.fields['管理员备注'] || '无'}</div>
+                    </div>
+                    <div class="flex gap-3 md:gap-0 md:justify-end border-t border-slate-50 pt-4 md:pt-0 md:border-none">
+                        <button onclick="openForm('${r.recordId}')" class="flex-1 md:flex-none py-2 md:py-0 md:px-4 text-indigo-600 font-bold text-sm bg-indigo-50 md:bg-transparent rounded-xl md:hover:underline">编辑</button>
+                        <button onclick="doDelete('${r.recordId}')" class="flex-1 md:flex-none py-2 md:py-0 md:px-4 text-red-400 font-bold text-sm bg-red-50 md:bg-transparent rounded-xl md:hover:text-red-600">删除</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // 【删除修复】维格表删除不能把 ID 拼在 records/ 后面，必须用 recordIds 参数
         async function doDelete(id) {
-            if (!confirm("确定删除吗？")) return;
-            const res = await vikaRequest(`records?recordIds=${id}`, 'DELETE');
-            if (res) reload();
+            if (confirm("确定要永久删除这条记录吗？")) {
+                const res = await vikaRequest(`records?recordIds=${id}`, 'DELETE');
+                if (res) reload();
+            }
         }
 
         window.openForm = (id = '') => {
             document.getElementById('recordForm').reset();
             document.getElementById('recId').value = id;
-            document.getElementById('modalTitle').innerText = id ? '📝 编辑记录' : '✨ 新增入库';
+            document.getElementById('modalTitle').innerText = id ? '📝 编辑记录' : '✨ 新增产品';
             if (id) {
                 const item = dataCache.find(r => r.recordId === id);
                 document.getElementById('iptName').value = item.fields['产品名称'];
@@ -173,9 +189,13 @@
                 document.getElementById('iptRemark').value = item.fields['管理员备注'] || '';
             }
             document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         };
 
-        window.closeForm = () => document.getElementById('modal').classList.add('hidden');
+        window.closeForm = () => {
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
 
         document.getElementById('recordForm').onsubmit = async (e) => {
             e.preventDefault();
@@ -187,19 +207,10 @@
                 "管理员备注": document.getElementById('iptRemark').value
             };
 
-            btn.classList.add('loading');
             btn.innerText = "同步中...";
-
-            // 【更新修复】维格表 PATCH 也不能在 URL 后面加 ID
-            const payload = id 
-                ? { records: [{ recordId: id, fields }], fieldKey: 'name' }
-                : { records: [{ fields }], fieldKey: 'name' };
-            
+            const payload = id ? { records: [{ recordId: id, fields }], fieldKey: 'name' } : { records: [{ fields }], fieldKey: 'name' };
             const res = await vikaRequest('records', id ? 'PATCH' : 'POST', payload);
-            
-            btn.classList.remove('loading');
-            btn.innerText = "确认保存";
-            
+            btn.innerText = "保存";
             if (res) { closeForm(); reload(); }
         };
 
