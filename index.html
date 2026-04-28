@@ -3,120 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VORTEX | Curated Editorial</title>
-    
+    <title>VORTEX</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap');
         
         :root {
-            --bg: #fcfcf9;
+            --bg: #ffffff;
+            --text-main: #111111; 
+            --glow-blue: rgba(0, 122, 255, 0.12); 
             --font-serif: 'Playfair Display', serif;
         }
 
-        body { background: var(--bg); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+        /* 解决跳动核心 1: 始终显示滚动条，防止页面左右晃动 */
+        html { overflow-y: scroll; }
 
-        /* 标题高度锁定 */
-        .hero-title {
-            font-family: var(--font-serif);
-            font-size: clamp(2.2rem, 7vw, 5rem);
-            line-height: 1.1;
-            font-style: italic;
-            min-height: 3.5em; 
+        body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text-main); -webkit-font-smoothing: antialiased; }
+
+        /* 呼吸灯动画 - 你的原始功能 */
+        @keyframes breathing {
+            0% { box-shadow: 0 4px 20px rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.05); }
+            50% { box-shadow: 0 10px 40px var(--glow-blue); border-color: rgba(0, 122, 255, 0.1); }
+            100% { box-shadow: 0 4px 20px rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.05); }
         }
 
-        #p-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem; padding: 0 1.5rem; max-width: 1400px; margin: 0 auto;
+        /* 顶部视频展示区 - 替换原打字机 */
+        .hero-video-box {
+            width: 100%;
+            aspect-ratio: 16 / 7; /* 解决跳动核心 2: 锁定高度占位 */
+            background: #000;
+            margin-bottom: 4rem;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.03);
+            position: relative;
         }
-        @media (min-width: 1024px) { #p-grid { grid-template-columns: repeat(3, 1fr); gap: 4rem; padding: 0 4rem; } }
+        .hero-video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0; /* 初始隐藏 */
+            transition: opacity 1s ease;
+        }
+        .video-ready video { opacity: 1; } /* 加载好后淡入 */
 
-        .product-card { opacity: 0; transform: translateY(30px); transition: all 1s ease; }
-        .product-card.show { opacity: 1; transform: translateY(0); }
+        /* 商品展示 - 你的原始样式 */
+        .img-wrapper { 
+            position: relative; 
+            aspect-ratio: 1/1; /* 解决跳动核心 3: 锁定高度占位 */
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.05);
+            animation: breathing 5s ease-in-out infinite;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .img-wrapper img { 
+            width: 100%; height: 100%; 
+            object-fit: contain; 
+            padding: 15%; 
+        }
+        .product-card:hover .img-wrapper {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0, 122, 255, 0.2);
+            animation-play-state: paused;
+        }
 
-        .img-wrapper { position: relative; aspect-ratio: 4/5; overflow: hidden; background: #eee; cursor: pointer; }
-        .img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.5s ease; }
-        .product-card:hover img { transform: scale(1.05); }
-
-        /* 分类按钮样式 */
-        #filter-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+        /* 黑色系按钮 - 你的原始样式 */
         .filter-btn { 
-            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
-            padding: 8px 18px; border: 1px solid rgba(0,0,0,0.1); border-radius: 99px;
-            transition: all 0.3s ease; cursor: pointer; background: transparent;
+            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em;
+            padding: 10px 24px; border: 1px solid #eee; color: #999; transition: all 0.4s;
         }
-        .filter-btn.active { background: #000; color: #fff; border-color: #000; }
-        .filter-btn:hover:not(.active) { border-color: #000; }
+        .filter-btn.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
 
-        /* 法律条款区块 */
-        .legal-content-box { display: none; padding: 2.5rem; background: #f4f4f1; margin-top: 2rem; border-radius: 1rem; font-size: 11px; line-height: 1.8; color: #666; text-transform: uppercase; }
-        .legal-content-box:target { display: block; animation: fadeIn 0.6s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        #loading { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .legal-content-box { 
+            display: none; padding: 3rem; background: #fafafa; border-left: 2px solid #111;
+            margin-top: 2rem; font-size: 12px; color: #444; line-height: 2;
+        }
+        .legal-content-box:target { display: block; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="loading"><div class="animate-pulse tracking-widest text-sm">VORTEX</div></div>
-
-    <nav class="fixed top-0 w-full z-50 p-6 lg:px-12 flex justify-between items-center border-b border-black/[0.03] bg-white/50 backdrop-blur-md">
-        <div class="font-bold tracking-widest text-sm uppercase">VORTEX</div>
+    <nav class="fixed top-0 w-full z-50 p-8 lg:px-16 flex justify-between items-center bg-white/80 backdrop-blur-lg">
+        <div class="font-bold tracking-[0.3em] text-xs uppercase">VORTEX</div>
     </nav>
 
     <main class="pt-40 pb-32">
-        <section class="px-6 lg:px-12 mb-12 max-w-6xl">
-            <h2 id="typed" class="hero-title tracking-tight"></h2>
+        <section class="px-8 lg:px-16 mb-20">
+            <div class="hero-video-box" id="hero-video-container">
+                <video id="hero-video" autoplay muted loop playsinline></video>
+            </div>
         </section>
 
-        <section class="px-6 lg:px-12 mb-16" id="filter-bar">
-            <button onclick="filterRecords('all')" class="filter-btn active" id="btn-all">All Archive</button>
+        <section class="px-8 lg:px-16 mb-16" id="filter-bar">
+            <button onclick="filterRecords('all')" class="filter-btn active" id="btn-all">All Objects</button>
         </section>
 
-        <div id="p-grid"></div>
+        <div id="p-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-16 px-8 lg:px-16 max-w-[1600px] mx-auto"></div>
     </main>
 
-    <footer class="border-t border-black/5 bg-white pt-20 pb-12 px-6 lg:px-12">
+    <footer class="bg-white border-t border-black/[0.05] pt-32 pb-16 px-8 lg:px-16 text-black">
         <div class="max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
-                <div>
-                    <h4 class="font-bold text-[11px] uppercase tracking-widest text-black mb-4">Information</h4>
-                    <p class="text-[10px] text-gray-400 leading-relaxed uppercase">
-                        SHENZHEN RUHANG INTERNATIONAL<br>HOUSEHOLD PRODUCTS CO., LTD.<br>
-                        Room 1303, No. 328 Xinmu Road, Longgang District, Shenzhen
-                    </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-20">
+                <div class="space-y-6">
+                    <h4 class="text-[11px] font-bold uppercase tracking-[0.2em]">Contact Agency</h4>
+                    <p class="text-[11px] leading-loose text-gray-500 uppercase tracking-wider">SHENZHEN RUHANG INTERNATIONAL</p>
                 </div>
-                <div>
-                    <h4 class="font-bold text-[11px] uppercase tracking-widest text-black mb-4">Legal</h4>
-                    <ul class="flex flex-col gap-2 text-[10px] text-gray-400 font-medium uppercase">
-                        <li><a href="#privacy" class="hover:text-black transition-colors">Privacy Policy</a></li>
-                        <li><a href="#terms" class="hover:text-black transition-colors">Terms of Service</a></li>
-                        <li><a href="#refund" class="hover:text-black transition-colors">Refund Policy</a></li>
+                <div class="space-y-6">
+                    <h4 class="text-[11px] font-bold uppercase tracking-[0.2em]">Compliance</h4>
+                    <ul class="flex flex-col gap-3 text-[11px] text-gray-400 uppercase tracking-tighter">
+                        <li><a href="#privacy" class="hover:text-black">Privacy</a></li>
+                        <li><a href="#terms" class="hover:text-black">Terms</a></li>
+                        <li><a href="#refund" class="hover:text-black">Returns</a></li>
                     </ul>
                 </div>
-                <div class="md:text-right">
-                    <h4 class="font-bold text-[11px] uppercase tracking-widest text-black mb-4">Inquiry</h4>
-                    <a href="mailto:wayfair@vortexd.com" class="text-lg font-light tracking-tighter border-b border-black pb-1 hover:opacity-50 transition-opacity">
-                        wayfair@vortexd.com
-                    </a>
+                <div class="md:text-right space-y-6">
+                    <h4 class="text-[11px] font-bold uppercase tracking-[0.2em]">Concierge</h4>
+                    <a href="mailto:wayfair@vortexd.com" class="text-xl font-light border-b border-black pb-2">wayfair@vortexd.com</a>
                 </div>
             </div>
-
+            
             <div id="privacy" class="legal-content-box">
-                <h6 class="font-bold text-black mb-4">Privacy Policy</h6>
-                <p>We collect essential data to provide and improve our storage solutions. Your information is processed with the highest security standards.</p>
+                <h6 class="font-bold text-black mb-6 uppercase tracking-widest">Privacy & Data Protection</h6>
+                <p>VORTEX respects the digital footprint of every visitor...</p>
             </div>
             <div id="terms" class="legal-content-box">
-                <h6 class="font-bold text-black mb-4">Terms of Service</h6>
-                <p>Accessing VORTEX implies agreement with our operational guidelines and intellectual property rights.</p>
+                <h6 class="font-bold text-black mb-6 uppercase tracking-widest">Terms of Service</h6>
+                <p>All visual content, code architecture...</p>
             </div>
             <div id="refund" class="legal-content-box">
-                <h6 class="font-bold text-black mb-4">Refund Policy</h6>
-                <p>30-day satisfaction guarantee for all smart space products. Please contact customer service for return authorizations.</p>
+                <h6 class="font-bold text-black mb-6 uppercase tracking-widest">Global Returns Policy</h6>
+                <p>We provide a 30-day window for returns...</p>
             </div>
 
-            <p class="mt-20 text-center text-[9px] tracking-[0.3em] text-gray-300 uppercase">© VORTEX 2026 ALL RIGHTS RESERVED</p>
+            <p class="mt-40 text-center text-[8px] tracking-[0.5em] text-gray-300 uppercase">© VORTEX 2026</p>
         </div>
     </footer>
 
@@ -125,7 +144,6 @@
             TOKEN: "uskSHurHAYSbDQBvTya8V2X",
             SHEET: "dstws9yu81bqKu8cvc"
         };
-
         let allRecords = []; 
 
         async function init() {
@@ -134,35 +152,42 @@
                     headers: { 'Authorization': `Bearer ${API_CONFIG.TOKEN}` }
                 });
                 const res = await response.json();
-
                 if (res.success) {
                     allRecords = res.data.records;
-                    generateFilterButtons(allRecords); // 自动提取并创建分类按钮
+                    
+                    // --- 视频读取核心修复 ---
+                    // 1. 尝试从第一行数据的“视频”字段读取，如果没有，就读“图片”里的链接
+                    const firstRecord = allRecords[0].fields;
+                    let topVideoUrl = firstRecord['视频'] || (Array.isArray(firstRecord['图片']) ? firstRecord['图片'][0].url : firstRecord['图片']);
+                    
+                    const videoElement = document.getElementById('hero-video');
+                    if (topVideoUrl) {
+                        videoElement.src = topVideoUrl;
+                        videoElement.oncanplay = () => {
+                            document.getElementById('hero-video-container').classList.add('video-ready');
+                        };
+                    }
+                    // -----------------------
+
+                    generateFilterButtons(allRecords);
                     renderGrid(allRecords); 
                 }
-            } catch (err) {
-                console.error("加载失败:", err);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-                new Typed('#typed', {
-                    strings: ['Visual Narrative.', 'Multi-Category Archive.', 'Silent Form.'],
-                    typeSpeed: 50, backSpeed: 30, loop: true, showCursor: false
-                });
+            } catch (err) { console.error("Error:", err); }
+            finally {
+                // 动画化隐藏 Loading
+                const loader = document.getElementById('loading');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
             }
         }
 
-        // 1. 自动从多选字段中提取所有唯一的分类名
         function generateFilterButtons(records) {
             const categories = new Set();
             records.forEach(r => {
                 const tags = r.fields['分类'];
-                if (Array.isArray(tags)) {
-                    tags.forEach(tag => categories.add(tag));
-                } else if (tags) {
-                    categories.add(tags);
-                }
+                if (Array.isArray(tags)) tags.forEach(tag => categories.add(tag));
+                else if (tags) categories.add(tags);
             });
-
             const bar = document.getElementById('filter-bar');
             categories.forEach(cat => {
                 const btn = document.createElement('button');
@@ -174,50 +199,35 @@
             });
         }
 
-        // 2. 渲染画廊
         function renderGrid(data) {
             const grid = document.getElementById('p-grid');
             grid.innerHTML = data.map((item, i) => {
                 const f = item.fields;
                 let imgUrl = f['图片'] ? (Array.isArray(f['图片']) ? f['图片'][0].url : f['图片']) : "";
                 if (!imgUrl) return "";
-
-                const stagger = (window.innerWidth > 1024 && i % 3 === 1) ? 'margin-top: 5rem;' : '';
-                
                 return `
-                    <div class="product-card show" style="${stagger}">
+                    <div class="product-card opacity-0 translate-y-10 transition-all duration-700" style="transition-delay: ${i*50}ms" id="card-${i}">
                         <div class="img-wrapper" onclick="window.open('${f['链接'] || '#'}')">
-                            <img src="${imgUrl}">
+                            <img src="${imgUrl}" onload="document.getElementById('card-${i}').classList.remove('opacity-0', 'translate-y-10')">
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // 3. 筛选逻辑（适配多选数组）
         function filterRecords(selectedCat) {
-            // 更新按钮状态
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                const cat = btn.getAttribute('data-cat') || 'all';
-                btn.classList.toggle('active', cat === selectedCat);
+                btn.classList.toggle('active', (btn.getAttribute('data-cat') || 'all') === selectedCat);
             });
-
-            if (selectedCat === 'all') {
-                renderGrid(allRecords);
-            } else {
-                const filtered = allRecords.filter(item => {
-                    const tags = item.fields['分类'];
-                    // 核心逻辑：判断多选字段是否包含当前选中的分类名
-                    if (Array.isArray(tags)) {
-                        return tags.includes(selectedCat);
-                    }
-                    return tags === selectedCat;
-                });
-                renderGrid(filtered);
-            }
+            const filtered = selectedCat === 'all' ? allRecords : allRecords.filter(item => {
+                const tags = item.fields['分类'];
+                return Array.isArray(tags) ? tags.includes(selectedCat) : tags === selectedCat;
+            });
+            renderGrid(filtered);
         }
 
         window.onload = init;
     </script>
+    <div id="loading" class="fixed inset-0 bg-white z-[1001] flex items-center justify-center text-xs tracking-[0.5em] transition-opacity duration-500">VORTEX</div>
 </body>
 </html>
