@@ -15,9 +15,9 @@
             --font-serif: 'Playfair Display', serif;
         }
 
-        body { background: var(--bg); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background: var(--bg); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
 
-        /* 解决跳动的关键：锁定标题高度 */
+        /* 标题高度锁定 */
         .hero-title {
             font-family: var(--font-serif);
             font-size: clamp(2.2rem, 7vw, 5rem);
@@ -39,6 +39,21 @@
         .img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.5s ease; }
         .product-card:hover img { transform: scale(1.05); }
 
+        /* 分类按钮样式 */
+        #filter-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+        .filter-btn { 
+            font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+            padding: 8px 18px; border: 1px solid rgba(0,0,0,0.1); border-radius: 99px;
+            transition: all 0.3s ease; cursor: pointer; background: transparent;
+        }
+        .filter-btn.active { background: #000; color: #fff; border-color: #000; }
+        .filter-btn:hover:not(.active) { border-color: #000; }
+
+        /* 法律条款区块 */
+        .legal-content-box { display: none; padding: 2.5rem; background: #f4f4f1; margin-top: 2rem; border-radius: 1rem; font-size: 11px; line-height: 1.8; color: #666; text-transform: uppercase; }
+        .legal-content-box:target { display: block; animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         #loading { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
@@ -51,60 +66,154 @@
     </nav>
 
     <main class="pt-40 pb-32">
-        <section class="px-6 lg:px-12 mb-20 max-w-6xl">
+        <section class="px-6 lg:px-12 mb-12 max-w-6xl">
             <h2 id="typed" class="hero-title tracking-tight"></h2>
         </section>
+
+        <section class="px-6 lg:px-12 mb-16" id="filter-bar">
+            <button onclick="filterRecords('all')" class="filter-btn active" id="btn-all">All Archive</button>
+        </section>
+
         <div id="p-grid"></div>
     </main>
 
+    <footer class="border-t border-black/5 bg-white pt-20 pb-12 px-6 lg:px-12">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+                <div>
+                    <h4 class="font-bold text-[11px] uppercase tracking-widest text-black mb-4">Information</h4>
+                    <p class="text-[10px] text-gray-400 leading-relaxed uppercase">
+                        SHENZHEN RUHANG INTERNATIONAL<br>HOUSEHOLD PRODUCTS CO., LTD.<br>
+                        Room 1303, No. 328 Xinmu Road, Longgang District, Shenzhen
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-[11px] uppercase tracking-widest text-black mb-4">Legal</h4>
+                    <ul class="flex flex-col gap-2 text-[10px] text-gray-400 font-medium uppercase">
+                        <li><a href="#privacy" class="hover:text-black transition-colors">Privacy Policy</a></li>
+                        <li><a href="#terms" class="hover:text-black transition-colors">Terms of Service</a></li>
+                        <li><a href="#refund" class="hover:text-black transition-colors">Refund Policy</a></li>
+                    </ul>
+                </div>
+                <div class="md:text-right">
+                    <h4 class="font-bold text-[11px] uppercase tracking-widest text-black mb-4">Inquiry</h4>
+                    <a href="mailto:wayfair@vortexd.com" class="text-lg font-light tracking-tighter border-b border-black pb-1 hover:opacity-50 transition-opacity">
+                        wayfair@vortexd.com
+                    </a>
+                </div>
+            </div>
+
+            <div id="privacy" class="legal-content-box">
+                <h6 class="font-bold text-black mb-4">Privacy Policy</h6>
+                <p>We collect essential data to provide and improve our storage solutions. Your information is processed with the highest security standards.</p>
+            </div>
+            <div id="terms" class="legal-content-box">
+                <h6 class="font-bold text-black mb-4">Terms of Service</h6>
+                <p>Accessing VORTEX implies agreement with our operational guidelines and intellectual property rights.</p>
+            </div>
+            <div id="refund" class="legal-content-box">
+                <h6 class="font-bold text-black mb-4">Refund Policy</h6>
+                <p>30-day satisfaction guarantee for all smart space products. Please contact customer service for return authorizations.</p>
+            </div>
+
+            <p class="mt-20 text-center text-[9px] tracking-[0.3em] text-gray-300 uppercase">© VORTEX 2026 ALL RIGHTS RESERVED</p>
+        </div>
+    </footer>
+
     <script>
         const API_CONFIG = {
-            TOKEN: "uskSHurHAYSbDQBvTya8V2X", // 你的 Token
-            SHEET: "dstws9yu81bqKu8cvc"      // 你的 Sheet ID
+            TOKEN: "uskSHurHAYSbDQBvTya8V2X",
+            SHEET: "dstws9yu81bqKu8cvc"
         };
+
+        let allRecords = []; 
 
         async function init() {
             try {
-                // 1. 获取数据
                 const response = await fetch(`https://api.vika.cn/fusion/v1/datasheets/${API_CONFIG.SHEET}/records?viewId=viwf1vrvWHjzg`, {
                     headers: { 'Authorization': `Bearer ${API_CONFIG.TOKEN}` }
                 });
                 const res = await response.json();
 
                 if (res.success) {
-                    const grid = document.getElementById('p-grid');
-                    // 2. 渲染列表
-                    grid.innerHTML = res.data.records.map((item, i) => {
-                        const f = item.fields;
-                        
-                        // 智能识别：图片列可能是附件数组，也可能是纯文本链接
-                        let imgUrl = "";
-                        if (f['图片']) {
-                            imgUrl = Array.isArray(f['图片']) ? f['图片'][0].url : f['图片'];
-                        }
-
-                        if (!imgUrl) return ""; // 没图就不显示
-
-                        const stagger = (window.innerWidth > 1024 && i % 3 === 1) ? 'margin-top: 5rem;' : '';
-                        
-                        return `
-                            <div class="product-card" style="${stagger}">
-                                <div class="img-wrapper" onclick="window.open('${f['链接'] || '#'}')">
-                                    <img src="${imgUrl}" onload="this.closest('.product-card').classList.add('show')">
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
+                    allRecords = res.data.records;
+                    generateFilterButtons(allRecords); // 自动提取并创建分类按钮
+                    renderGrid(allRecords); 
                 }
             } catch (err) {
-                console.error("读取失败:", err);
+                console.error("加载失败:", err);
             } finally {
-                // 3. 关闭加载动画 & 开启打字机
                 document.getElementById('loading').style.display = 'none';
                 new Typed('#typed', {
-                    strings: ['Visual Narrative.', 'Curated from Vika API.', 'Silent Form.'],
+                    strings: ['Visual Narrative.', 'Multi-Category Archive.', 'Silent Form.'],
                     typeSpeed: 50, backSpeed: 30, loop: true, showCursor: false
                 });
+            }
+        }
+
+        // 1. 自动从多选字段中提取所有唯一的分类名
+        function generateFilterButtons(records) {
+            const categories = new Set();
+            records.forEach(r => {
+                const tags = r.fields['分类'];
+                if (Array.isArray(tags)) {
+                    tags.forEach(tag => categories.add(tag));
+                } else if (tags) {
+                    categories.add(tags);
+                }
+            });
+
+            const bar = document.getElementById('filter-bar');
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.innerText = cat;
+                btn.onclick = () => filterRecords(cat);
+                btn.setAttribute('data-cat', cat);
+                bar.appendChild(btn);
+            });
+        }
+
+        // 2. 渲染画廊
+        function renderGrid(data) {
+            const grid = document.getElementById('p-grid');
+            grid.innerHTML = data.map((item, i) => {
+                const f = item.fields;
+                let imgUrl = f['图片'] ? (Array.isArray(f['图片']) ? f['图片'][0].url : f['图片']) : "";
+                if (!imgUrl) return "";
+
+                const stagger = (window.innerWidth > 1024 && i % 3 === 1) ? 'margin-top: 5rem;' : '';
+                
+                return `
+                    <div class="product-card show" style="${stagger}">
+                        <div class="img-wrapper" onclick="window.open('${f['链接'] || '#'}')">
+                            <img src="${imgUrl}">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 3. 筛选逻辑（适配多选数组）
+        function filterRecords(selectedCat) {
+            // 更新按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const cat = btn.getAttribute('data-cat') || 'all';
+                btn.classList.toggle('active', cat === selectedCat);
+            });
+
+            if (selectedCat === 'all') {
+                renderGrid(allRecords);
+            } else {
+                const filtered = allRecords.filter(item => {
+                    const tags = item.fields['分类'];
+                    // 核心逻辑：判断多选字段是否包含当前选中的分类名
+                    if (Array.isArray(tags)) {
+                        return tags.includes(selectedCat);
+                    }
+                    return tags === selectedCat;
+                });
+                renderGrid(filtered);
             }
         }
 
